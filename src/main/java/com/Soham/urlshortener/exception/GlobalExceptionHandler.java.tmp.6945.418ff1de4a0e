@@ -1,0 +1,112 @@
+package com.Soham.urlshortener.exception;
+
+import com.Soham.urlshortener.dto.ErrorResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+/**
+ * Single place that handles ALL exceptions thrown by controllers or services.
+ * Each @ExceptionHandler method maps one exception type → one HTTP status code.
+ *
+ * @RestControllerAdvice = @ControllerAdvice + @ResponseBody (serialize return as JSON).
+ */
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    // 404 Not Found
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(
+            ResourceNotFoundException ex, HttpServletRequest request) {
+        return build(HttpStatus.NOT_FOUND, ex.getMessage(), request, null);
+    }
+
+    // 409 Conflict — duplicate email on registration
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateEmail(
+            EmailAlreadyExistsException ex, HttpServletRequest request) {
+        return build(HttpStatus.CONFLICT, ex.getMessage(), request, null);
+    }
+
+    // 429 Too Many Requests — Bucket4j rate limit exceeded
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimit(
+            RateLimitExceededException ex, HttpServletRequest request) {
+        return build(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage(), request, null);
+    }
+
+    // 400 Bad Request — @Valid annotation failed on a DTO
+    // Extracts field-level error messages: ["email: Must be a valid email address", ...]
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidation(
+            MethodArgumentNotValidException ex, HttpServletRequest request) {
+        List<String> details = ex.getBindingResult().getFieldErrors()
+            .stream()
+            .map(FieldError::getDefaultMessage)
+            .toList();
+        return build(HttpStatus.BAD_REQUEST, "Validation failed", request, details);
+    }
+
+    // 401 Unauthorized — wrong password during login
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentials(
+            BadCredentialsException ex, HttpServletRequest request) {
+        return build(HttpStatus.UNAUTHORIZED, "Invalid email or password", request, null);
+    }
+
+    // 403 Forbidden — authenticated but not authorized (e.g. deleting someone else's URL)
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<ErrorResponse> handleSecurity(
+            SecurityException ex, HttpServletRequest request) {
+        return build(HttpStatus.FORBIDDEN, ex.getMessage(), request, null);
+    }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAuthorizationDenied(
+            AuthorizationDeniedException ex, HttpServletRequest request) {
+        return build(HttpStatus.FORBIDDEN, "Access denied", request, null);
+    }
+
+    // 400 Bad Request — e.g. custom short code already taken
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(
+            IllegalArgumentException ex, HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request, null);
+    }
+
+    // 500 Internal Server Error — catch-all for unexpected exceptions
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGeneric(
+            Exception ex, HttpServletRequest request) {
+        // In production, log this with a correlation ID and send to monitoring
+        return build(HttpStatus.INTERNAL_SERVER_ERROR,
+            "An unexpected error occurred. Please try again later.", request, null);
+    }
+
+    // --- helper ---
+
+    private ResponseEntity<ErrorResponse> build(
+            HttpStatus status, String message,
+            HttpServletRequest request, List<String> details) {
+
+        ErrorResponse body = ErrorResponse.builder()
+            .status(status.value())
+            .error(status.getReasonPhrase())
+            .message(message)
+            .timestamp(LocalDateTime.now())
+            .path(request.getRequestURI())
+            .details(details)
+            .build();
+
+        return ResponseEntity.status(status).body(body);
+    }
+}
