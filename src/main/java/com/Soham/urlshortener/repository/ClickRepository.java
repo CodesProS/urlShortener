@@ -4,6 +4,7 @@ import com.Soham.urlshortener.model.Click;
 import com.Soham.urlshortener.model.ShortUrl;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -16,10 +17,13 @@ public interface ClickRepository extends JpaRepository<Click, Long> {
 
     long countByShortUrl(ShortUrl shortUrl);
 
-    // Analytics: clicks grouped by date — a JPQL aggregate query
-    // Returns List<Object[]> where [0] = date string, [1] = count
-    @Query("SELECT CAST(c.clickedAt AS date), COUNT(c) FROM Click c " +
-           "WHERE c.shortUrl = :shortUrl AND c.clickedAt >= :since " +
-           "GROUP BY CAST(c.clickedAt AS date) ORDER BY CAST(c.clickedAt AS date)")
-    List<Object[]> countClicksByDay(ShortUrl shortUrl, LocalDateTime since);
+    // Native query — avoids JPQL CAST inconsistencies across Hibernate versions.
+    // DATE(clicked_at) truncates timestamp to date in PostgreSQL.
+    // Returns Object[] where [0] = java.sql.Date, [1] = Long count.
+    @Query(value = "SELECT DATE(clicked_at), COUNT(*) FROM clicks " +
+                   "WHERE short_url_id = :shortUrlId AND clicked_at >= :since " +
+                   "GROUP BY DATE(clicked_at) ORDER BY DATE(clicked_at)",
+           nativeQuery = true)
+    List<Object[]> countClicksByDay(@Param("shortUrlId") Long shortUrlId,
+                                    @Param("since") LocalDateTime since);
 }
