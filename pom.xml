@@ -20,8 +20,8 @@
 		<jjwt.version>0.12.6</jjwt.version>
 		<!-- SpringDoc 2.x supports Spring Boot 3/4. If SB4 breaks this,
 		     check https://springdoc.org for the Spring Boot 4 compatible release. -->
-		<springdoc.version>2.8.9</springdoc.version>
-		<bucket4j.version>8.14.0</bucket4j.version>
+		<springdoc.version>2.8.6</springdoc.version>
+		<bucket4j.version>8.10.1</bucket4j.version>
 	</properties>
 
 	<dependencies>
