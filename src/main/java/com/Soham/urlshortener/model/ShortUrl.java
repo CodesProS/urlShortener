@@ -14,13 +14,19 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.JoinColumn;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import java.io.Serializable;
 
 @Entity
 @Table(name = "short_url")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ShortUrl {
+// Handles Hibernate proxy metadata during Redis JSON serialization
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+public class ShortUrl implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,5 +53,6 @@ public class ShortUrl {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @JsonIgnore  // exclude from Redis cache — prevents password hash leaking into cache
     private User user;
 }
