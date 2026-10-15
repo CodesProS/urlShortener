@@ -3,6 +3,7 @@ package com.Soham.urlshortener.dto;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 /**
@@ -18,5 +19,5 @@ public class ShortenResponse {
     private String shortUrl;        // full URL: https://yourdomain.com/abc12345
     private Long clickCount;
     private LocalDateTime createdAt;
-    private LocalDateTime expiresAt;
+    private Instant expiresAt;
 }

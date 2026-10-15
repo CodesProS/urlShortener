@@ -1,11 +1,12 @@
 package com.Soham.urlshortener.dto;
 
+import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 import org.hibernate.validator.constraints.URL;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 public class ShortenRequest {
@@ -25,6 +26,9 @@ public class ShortenRequest {
 
     /**
      * Optional expiry. Null means the URL never expires.
+     * Instant (not LocalDateTime) so the timezone in "2026-10-15T05:00:00Z" is respected
+     * instead of being silently dropped and read as server-local time.
      */
-    private LocalDateTime expiresAt;
+    @Future(message = "Expiry must be in the future")
+    private Instant expiresAt;
 }

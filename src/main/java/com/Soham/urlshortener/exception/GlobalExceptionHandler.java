@@ -4,6 +4,7 @@ import com.Soham.urlshortener.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.FieldError;
@@ -69,6 +70,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleAuthorizationDenied(
             AuthorizationDeniedException ex, HttpServletRequest request) {
         return build(HttpStatus.FORBIDDEN, "Forbidden", "Access denied", request, null);
+    }
+
+    // Malformed JSON or unparseable values (e.g. a date without a timezone) — client error, not 500
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleUnreadable(
+            HttpMessageNotReadableException ex, HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST, "Bad Request",
+            "Malformed request body. Dates must be ISO-8601 with a timezone, e.g. 2026-12-01T00:00:00Z",
+            request, null);
     }
 
     // Catch-all: prevents leaking stack traces to clients

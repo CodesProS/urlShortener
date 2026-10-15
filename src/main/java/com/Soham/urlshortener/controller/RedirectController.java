@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * The core feature of the app: redirect /{shortCode} → originalUrl.
@@ -48,7 +48,7 @@ public class RedirectController {
         ShortUrl shortUrl = shortUrlService.findByShortCode(shortCode);
 
         // Check expiry
-        if (shortUrl.getExpireAt() != null && LocalDateTime.now().isAfter(shortUrl.getExpireAt())) {
+        if (shortUrl.getExpireAt() != null && Instant.now().isAfter(shortUrl.getExpireAt())) {
             return ResponseEntity.status(HttpStatus.GONE).build(); // 410 Gone
         }
 

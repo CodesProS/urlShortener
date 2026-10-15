@@ -1,5 +1,6 @@
 package com.Soham.urlshortener.model;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -43,8 +44,9 @@ public class ShortUrl implements Serializable {
 
     private Long clickCount = 0L;
 
+    // Instant maps to PostgreSQL timestamptz — an absolute moment, independent of server timezone
     @Column(nullable = true, updatable = false)
-    private LocalDateTime expireAt;
+    private Instant expireAt;
 
     @PrePersist
     protected void onCreate() {
